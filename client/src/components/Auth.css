@@ -1,0 +1,67 @@
+/* Full-page gradient background */
+.auth-container {
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(90deg,rgba(2, 0, 36, 1) 0%, rgba(9, 9, 121, 1) 35%, rgba(0, 212, 255, 1) 100%); /* Blue gradient */
+  background-size: cover;
+  background-position: center;
+}
+
+/* Semi-transparent login box */
+.auth-container form {
+  background-color: rgba(255, 255, 255, 0.15); 
+  backdrop-filter: blur(10px);
+  padding: 40px;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+  width: 250px;
+  height: 250px;
+  color: white;
+}
+
+/* Heading */
+.auth-container h2 {
+  text-align: center;
+  color: #fff;
+  /* margin-bottom: 20px; */
+}
+
+/* Input fields */
+.auth-container input {
+  margin: 10px 0;
+  padding: 12px;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+}
+
+/* Submit button */
+.auth-container button {
+  margin-top: 10px;
+  padding: 12px;
+  border: none;
+  background-color: #ffffff;
+  color: #2a5298;
+  font-weight: bold;
+  font-size: 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.auth-container button:hover {
+  background-color: #dce3f0;
+}
+
+/* Back link */
+.auth-container p {
+  margin-top: 20px;
+  text-align: center;
+  color: #f0f0f0;
+  cursor: pointer;
+  text-decoration: underline;
+}
