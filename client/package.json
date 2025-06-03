@@ -2,6 +2,7 @@
   "name": "client",
   "version": "0.1.0",
   "private": true,
+  "homepage": ".", 
   "dependencies": {
     "postcss-value-parser": "^4.2.0",
     "react": "^18.2.0",

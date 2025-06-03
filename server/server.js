@@ -7,17 +7,14 @@ const cors = require('cors');
 const app = express();
 app.use(cors());
 
-// Serve the static files from the React app
+// Serve static React build
 app.use(express.static(path.join(__dirname, '../client/build')));
 
 const server = http.createServer(app);
-const io = new Server(server, {
-  cors: { origin: '*' }
-});
+const io = new Server(server, { cors: { origin: '*' } });
 
+// WebSocket handling
 io.on('connection', socket => {
-  console.log('User connected:', socket.id);
-
   socket.on('join-room', ({ roomId, username }) => {
     socket.join(roomId);
     socket.to(roomId).emit('user-joined', { id: socket.id, username });
@@ -41,7 +38,7 @@ io.on('connection', socket => {
   });
 });
 
-// Fallback route - Serve React's index.html for unmatched GET requests
+// Catch-all route to serve React's index.html
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '../client/build/index.html'));
 });
