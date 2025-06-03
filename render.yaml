@@ -1,9 +1,21 @@
 services:
   - type: web
-    name: video-chat-app
+    name: video-chat-server
     env: node
     rootDir: server
-    buildCommand: npm install && npm run heroku-postbuild
-    startCommand: npm start
-    plan: free
-    autoDeploy: true
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+
+  - type: web
+    name: video-chat-client
+    env: node
+    rootDir: client
+    buildCommand: npm install && npm run build
+    startCommand: serve -s build
+    staticPublishPath: build
+    envVars:
+      - key: NODE_ENV
+        value: production
