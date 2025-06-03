@@ -1,19 +1,21 @@
+const path = require('path');
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
-const path = require('path');
 
 const app = express();
 app.use(cors());
 
-// Serve static files from React build
+// Serve the static files from the React app
 app.use(express.static(path.join(__dirname, '../client/build')));
 
 const server = http.createServer(app);
-const io = new Server(server, { cors: { origin: '*' } });
+const io = new Server(server, {
+  cors: { origin: '*' }
+});
 
-io.on('connection', (socket) => {
+io.on('connection', socket => {
   socket.on('join-room', ({ roomId, username }) => {
     socket.join(roomId);
     socket.to(roomId).emit('user-joined', { id: socket.id, username });
@@ -37,10 +39,10 @@ io.on('connection', (socket) => {
   });
 });
 
-// Send React app for all other routes
+// All other GET requests not handled before will return the React app
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '../client/build/index.html'));
 });
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 10000;
 server.listen(PORT, () => console.log(`Server running on port ${PORT}`));

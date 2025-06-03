@@ -2,12 +2,15 @@ services:
   - type: web
     name: videochat-server
     env: node
-    rootDir: server
-    buildCommand: npm install
+    plan: free
+    buildCommand: |
+      cd client
+      npm install
+      npm run build
+      cd ../server
+      npm install
     startCommand: node server.js
-
-  - type: static
-    name: videochat-client
-    rootDir: client
-    buildCommand: npm install && npm run build
-    staticPublishPath: build
+    envVars:
+      - key: NODE_VERSION
+        value: 18
+    rootDir: server
