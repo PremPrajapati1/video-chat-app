@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: video-chat-app
+    env: node
+    rootDir: server
+    buildCommand: npm install && npm run heroku-postbuild
+    startCommand: npm start
+    plan: free
+    autoDeploy: true
