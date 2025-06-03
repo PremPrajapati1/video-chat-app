@@ -10,7 +10,7 @@ services:
       cd ../server
       npm install
     startCommand: node server.js
+    rootDir: server
     envVars:
       - key: NODE_VERSION
         value: 18
-    rootDir: server
