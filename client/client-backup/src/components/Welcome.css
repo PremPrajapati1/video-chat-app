@@ -1,0 +1,63 @@
+/* src/components/Welcome.css */
+
+.welcome-container {
+  display: flex;
+ /* background-image: url('./background.jpg');
+ background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat; */
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+ background: linear-gradient(90deg,rgba(2, 0, 36, 1) 0%, rgba(9, 9, 121, 1) 35%, rgba(0, 212, 255, 1) 100%);
+  text-align: center;
+}
+h1 {
+  font-size: 72px;
+  background: -webkit-linear-gradient(45deg, #eee, #333);
+  background-clip: content-box;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.welcome-container h1 {
+  font-size: 3rem;
+  margin-bottom: 20px;
+  font-family: Lexend;
+  font-weight: 450;
+}
+
+.welcome-container .buttons {
+  display: flex;
+  flex-direction: column;
+
+  
+}
+.login-button{
+    margin-right: 10px;
+}
+.welcome-container button {
+  padding: 10px 20px;
+  font-size: 1rem;
+  cursor: pointer;
+  background-color: rgb(216, 215, 215);
+  color: black;
+  border: black;
+  border-radius: 5px;
+  transition: background-color 0.3s;
+}
+
+.welcome-container button:hover {
+  background-color: #333;
+  font-size: 1.1rem;
+  color: white;
+  /* border-color: #333 solid 2px; */
+}
+
+.welcome-container .guest-link {
+  margin-top: 15px;
+  color: whitesmoke;
+  cursor: pointer;
+  text-decoration: underline;
+}
