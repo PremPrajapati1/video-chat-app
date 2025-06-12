@@ -7,13 +7,16 @@ const cors = require('cors');
 const app = express();
 app.use(cors());
 
-// Serve static React build
+// Serve static files from the React build folder
 app.use(express.static(path.join(__dirname, '../client/build')));
 
+// Create HTTP and WebSocket server
 const server = http.createServer(app);
-const io = new Server(server, { cors: { origin: '*' } });
+const io = new Server(server, {
+  cors: { origin: '*' }
+});
 
-// WebSocket handling
+// Socket.IO Events
 io.on('connection', socket => {
   socket.on('join-room', ({ roomId, username }) => {
     socket.join(roomId);
@@ -38,7 +41,7 @@ io.on('connection', socket => {
   });
 });
 
-// Catch-all route to serve React's index.html
+// Fallback for SPA routing
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '../client/build/index.html'));
 });
