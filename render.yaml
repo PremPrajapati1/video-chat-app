@@ -3,9 +3,14 @@ services:
     name: video-chat-server
     env: node
     plan: free
-    rootDir: server
-    buildCommand: cd ../client && npm install && npm run build && cd ../server && npm install
+    buildCommand: |
+      cd client && npm install && npm run build &&
+      cd ../server && npm install
     startCommand: node server.js
     envVars:
       - key: NODE_VERSION
         value: 18
+    repo: https://github.com/PremPrajapati1/video-chat-app
+    branch: main
+    rootDir: server
+    autoDeploy: true
