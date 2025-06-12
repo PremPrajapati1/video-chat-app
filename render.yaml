@@ -1,16 +1,16 @@
 services:
   - type: web
-    name: video-chat-server
+    name: videochat-server
     env: node
-    plan: free
-    buildCommand: |
-      cd client && npm install && npm run build &&
-      cd ../server && npm install
-    startCommand: node server.js
-    envVars:
-      - key: NODE_VERSION
-        value: 18
-    repo: https://github.com/PremPrajapati1/video-chat-app
-    branch: main
     rootDir: server
-    autoDeploy: true
+    buildCommand: npm install
+    startCommand: node index.js
+    envVars:
+      - key: CORS_ORIGIN
+        value: https://video-chat-client-9k8a.onrender.com
+
+  - type: static
+    name: videochat-client
+    rootDir: client
+    buildCommand: npm install && npm run build
+    staticPublishPath: build

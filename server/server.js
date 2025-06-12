@@ -5,22 +5,37 @@ const { Server } = require('socket.io');
 const cors = require('cors');
 
 const app = express();
-app.use(cors());
 
-// Serve static files from the React build folder
+// Enable CORS for your frontend's origin
+app.use(cors({
+  origin: "https://video-chat-client-9k8a.onrender.com", // Replace with actual frontend URL
+  methods: ["GET", "POST"]
+}));
+
+// Serve static files from React build folder
 app.use(express.static(path.join(__dirname, '../client/build')));
 
-// Create HTTP and WebSocket server
+// Create HTTP server
 const server = http.createServer(app);
+
+// Initialize Socket.IO
 const io = new Server(server, {
-  cors: { origin: '*' }
+  cors: {
+    origin: "https://video-chat-client-9k8a.onrender.com", // Replace with actual frontend URL
+    methods: ["GET", "POST"],
+    credentials: true
+  },
+  transports: ['websocket', 'polling']
 });
 
-// Socket.IO Events
-io.on('connection', socket => {
+// --- SOCKET.IO LOGIC ---
+io.on('connection', (socket) => {
+  console.log(`User connected: ${socket.id}`);
+
   socket.on('join-room', ({ roomId, username }) => {
     socket.join(roomId);
     socket.to(roomId).emit('user-joined', { id: socket.id, username });
+    console.log(`${username} joined room: ${roomId}`);
   });
 
   socket.on('signal', ({ to, data }) => {
@@ -38,13 +53,15 @@ io.on('connection', socket => {
 
   socket.on('disconnect', () => {
     io.emit('user-left', socket.id);
+    console.log(`User disconnected: ${socket.id}`);
   });
 });
 
-// Fallback for SPA routing
+// --- SPA Fallback ---
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '../client/build/index.html'));
 });
 
+// Start server
 const PORT = process.env.PORT || 10000;
-server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+server.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));

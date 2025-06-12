@@ -11,6 +11,7 @@ export default function Room() {
   const localVideo = useRef();
   const remoteVideo = useRef();
   const peerRef = useRef();
+  const localStreamRef = useRef();
 
   const [chat, setChat] = useState([]);
   const [message, setMessage] = useState('');
@@ -20,6 +21,7 @@ export default function Room() {
   useEffect(() => {
     const startMedia = async () => {
       const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      localStreamRef.current = stream;
       localVideo.current.srcObject = stream;
       socket.emit('join-room', { roomId, username });
     };
@@ -27,47 +29,45 @@ export default function Room() {
   }, [username, roomId]);
 
   useEffect(() => {
-    socket.on('user-joined', async ({ id }) => {
-      peerRef.current = new RTCPeerConnection();
-      localVideo.current.srcObject.getTracks().forEach(track => {
-        peerRef.current.addTrack(track, localVideo.current.srcObject);
+    const createPeer = (id, initiator) => {
+      const peer = new RTCPeerConnection();
+
+      localStreamRef.current.getTracks().forEach(track => {
+        peer.addTrack(track, localStreamRef.current);
       });
 
-      peerRef.current.onicecandidate = e => {
+      peer.onicecandidate = e => {
         if (e.candidate) {
           socket.emit('signal', { to: id, data: { candidate: e.candidate } });
         }
       };
 
-      peerRef.current.ontrack = e => {
+      peer.ontrack = e => {
         remoteVideo.current.srcObject = e.streams[0];
       };
 
-      const offer = await peerRef.current.createOffer();
-      await peerRef.current.setLocalDescription(offer);
-      socket.emit('signal', { to: id, data: { sdp: offer } });
+      if (initiator) {
+        peer.createOffer().then(offer => {
+          peer.setLocalDescription(offer);
+          socket.emit('signal', { to: id, data: { sdp: offer } });
+        });
+      }
+
+      return peer;
+    };
+
+    socket.on('user-joined', ({ id }) => {
+      peerRef.current = createPeer(id, true);
     });
 
     socket.on('signal', async ({ from, data }) => {
       if (!peerRef.current) {
-        peerRef.current = new RTCPeerConnection();
-        localVideo.current.srcObject.getTracks().forEach(track => {
-          peerRef.current.addTrack(track, localVideo.current.srcObject);
-        });
-
-        peerRef.current.onicecandidate = e => {
-          if (e.candidate) {
-            socket.emit('signal', { to: from, data: { candidate: e.candidate } });
-          }
-        };
-
-        peerRef.current.ontrack = e => {
-          remoteVideo.current.srcObject = e.streams[0];
-        };
+        peerRef.current = createPeer(from, false);
       }
 
       if (data.sdp) {
         await peerRef.current.setRemoteDescription(new RTCSessionDescription(data.sdp));
+
         if (data.sdp.type === 'offer') {
           const answer = await peerRef.current.createAnswer();
           await peerRef.current.setLocalDescription(answer);
@@ -76,13 +76,17 @@ export default function Room() {
       }
 
       if (data.candidate) {
-        const tryAddCandidate = async () => {
-          while (!peerRef.current.remoteDescription) {
-            await new Promise(r => setTimeout(r, 100));
-          }
+        if (peerRef.current.remoteDescription) {
           await peerRef.current.addIceCandidate(new RTCIceCandidate(data.candidate));
-        };
-        tryAddCandidate();
+        } else {
+          const waitForRemote = async () => {
+            while (!peerRef.current.remoteDescription) {
+              await new Promise(resolve => setTimeout(resolve, 100));
+            }
+            await peerRef.current.addIceCandidate(new RTCIceCandidate(data.candidate));
+          };
+          waitForRemote();
+        }
       }
     });
 
@@ -97,14 +101,15 @@ export default function Room() {
     };
   }, [roomId, username]);
 
-const sendMessage = () => {
-  if (message.trim() === '') return;
-  socket.emit('chat-message', { roomId, username, message });
-  setChat(prev => [...prev, { username, message }]);
-  setMessage('');
-};
+  const sendMessage = () => {
+    if (message.trim() === '') return;
+    socket.emit('chat-message', { roomId, username, message });
+    setChat(prev => [...prev, { username, message }]);
+    setMessage('');
+  };
+
   const toggleMute = () => {
-    const stream = localVideo.current.srcObject;
+    const stream = localStreamRef.current;
     if (stream) {
       stream.getAudioTracks().forEach(track => {
         track.enabled = isMuted;
@@ -114,7 +119,7 @@ const sendMessage = () => {
   };
 
   const toggleCamera = () => {
-    const stream = localVideo.current.srcObject;
+    const stream = localStreamRef.current;
     if (stream) {
       stream.getVideoTracks().forEach(track => {
         track.enabled = isCameraOff;
@@ -129,9 +134,8 @@ const sendMessage = () => {
       peerRef.current = null;
     }
 
-    const stream = localVideo.current.srcObject;
-    if (stream) {
-      stream.getTracks().forEach(track => track.stop());
+    if (localStreamRef.current) {
+      localStreamRef.current.getTracks().forEach(track => track.stop());
     }
 
     socket.emit('leave-room', { roomId, username });
@@ -142,10 +146,10 @@ const sendMessage = () => {
     <div className="room-container">
       <div className="controls-bar">
         <div className='footer'>
-        <button type="button" onClick={toggleMute}>{isMuted ? 'Unmute' : 'Mute'}</button>
-        <button type="button" onClick={toggleCamera}>{isCameraOff ? 'Turn Camera On' : 'Turn Camera Off'}</button>
-        <button type="button" onClick={leaveRoom}>Leave Room</button>
-      </div>
+          <button onClick={toggleMute}>{isMuted ? 'Unmute' : 'Mute'}</button>
+          <button onClick={toggleCamera}>{isCameraOff ? 'Turn Camera On' : 'Turn Camera Off'}</button>
+          <button onClick={leaveRoom}>Leave Room</button>
+        </div>
       </div>
 
       <h2 className="room-title">Room: {roomId}</h2>
@@ -168,13 +172,11 @@ const sendMessage = () => {
               value={message}
               onChange={e => setMessage(e.target.value)}
               onKeyDown={e => {
-                if (e.key === 'Enter') {
-                  sendMessage();
-                }
+                if (e.key === 'Enter') sendMessage();
               }}
               placeholder="Type a message..."
             />
-            <button type="button" onClick={sendMessage}>Send</button>
+            <button onClick={sendMessage}>Send</button>
           </div>
         </div>
       </div>

@@ -1,2 +1,4 @@
 import { io } from 'socket.io-client';
-export const socket = io('https://video-chat-server-j2gu.onrender.com'); // Replace with your actual deployed backend URL
+export const socket = io('https://video-chat-server-j2gu.onrender.com/', {
+  transports: ['websocket']
+});
