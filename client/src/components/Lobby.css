@@ -1,76 +1,77 @@
 .lobby-container {
   height: 100vh;
-  background: linear-gradient(to right, #000046, #1cb5e0);
+background: linear-gradient(to right, var(--lineargradient2--color),var(--lineargradient1--color));
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   font-family: 'Segoe UI', sans-serif;
-  color: white;
-  padding: 20px;
+  color: var(--white--color);
 }
 
 .lobby-container h2 {
   margin-bottom: 30px;
-  font-size: 32px;
-  color: #fff;
+  font-size: 2rem;
+  color:var(--white--color);
+  font-weight: bold;
 }
 
 /* Transparent box around inputs and buttons */
 .form-container {
-  background: rgba(255, 255, 255, 0.15); /* white with 15% opacity */
+  height: 280px; 
+  width: 320px;
+  background: rgba(255, 255, 255, 0.15); 
   border-radius: 12px;
   padding: 30px 40px;
-  width: 320px;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  height: 280px; /* control container height */
+  align-items: center;
   box-shadow: 0 4px 15px rgba(0,0,0,0.2);
 }
 
 /* Inputs stacked with some spacing */
 .lobby-input {
-  /* margin-bottom: 20px; */
+  width: 100%;
   padding: 10px;
-  width: 90%;
   border-radius: 6px;
   border: none;
   outline: none;
-  font-size: 16px;
-  background: whitesmoke;
-  color: black;
+  font-size: 1rem;
+  background: var(--whitesmoke--color);
+  color: var(--black--color);
+  margin-top: 6px;
 }
 .input-group {
-  width: 320px; /* same as input width */
+  width: auto; 
   margin-bottom: 20px;
   display: flex;
   flex-direction: column;
-  color: #ddd; /* light label color */
+  justify-content: center;
+  align-items: center;
+  color: var(--white--color); 
   font-weight: 600;
-  font-size: 14px;
+  font-size: 0.9rem;
 }
-
-.input-group label {
-  margin-bottom: 6px;
-}
-
 
 /* Button container at bottom, side by side */
 .button-group {
   display: flex;
   justify-content: space-between;
-  gap: 15px;
+  align-items: center;
+  gap: 1rem;
   margin-top: 20px;
 }
 
 /* Buttons style */
 .lobby-button {
-  flex: 1; /* buttons share equal width */
+  flex: 1; 
+  height: 50px;
+  width: 100px;
   padding: 10px 0;
-  font-size: 16px;
-  background-color: #333;
-  color: white;
+  font-size: 1rem;
+  background-color: var(--darkgrey--color);
+  color: var(--white--color);
   border: none;
   border-radius: 6px;
   cursor: pointer;
@@ -78,20 +79,14 @@
 }
 
 .lobby-button:hover {
-  background-color: #555;
-}
-
-.animated-quote {
-  font-weight: bold;
-  font-size: 32px;
-  min-height: 50px; /* reserve space to avoid jumping */
+  background-color: var(--lightgrey--color);
 }
 
 .cursor {
   display: inline-block;
   width: 10px;
   animation: blink 1s infinite;
-  color: white;
+  color: var(--white--color);
 }
 
 @keyframes blink {
@@ -101,4 +96,45 @@
   50.01%, 100% {
     opacity: 0;
   }
+}
+
+/* media--quries */
+@media screen and (max-width: 500px){
+.lobby-container h2 {
+  font-size: 1.4rem;
+
+}
+.form-container {
+  height: 250px; 
+  width: 290px;
+}
+}
+
+@media screen and (max-width: 420px){
+.lobby-container h2 {
+  font-size: 1.2rem;
+}
+}
+
+@media screen and (max-width: 375px){
+.lobby-container h2 {
+  font-size: 1rem;
+
+}
+.form-container { 
+  width: 250px;
+}
+.lobby-button {
+  font-size: 0.9rem;
+}
+}
+
+@media screen and (max-width: 320px){
+.lobby-container h2 {
+  font-size: 0.9rem;
+
+}
+.form-container { 
+  width: 220px;
+}
 }

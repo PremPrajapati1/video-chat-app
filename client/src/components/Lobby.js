@@ -64,23 +64,29 @@ export default function Lobby() {
 
       <div className="form-container">
         <div className="input-group">
-          <label htmlFor="username">Username</label>
-          <input
-            id="username"
-            className="lobby-input"
-            placeholder="Enter your username"
-            onChange={e => setUsername(e.target.value)}
-          />
+          <div className="input-content">
+
+            <label htmlFor="username">Username</label>
+            <input
+              id="username"
+              className="lobby-input"
+              placeholder="Enter your username"
+              onChange={e => setUsername(e.target.value)}
+            />
+          </div>
         </div>
 
         <div className="input-group">
-          <label htmlFor="roomId">Room ID</label>
-          <input
-            id="roomId"
-            className="lobby-input"
-            placeholder="Enter room ID"
-            onChange={e => setRoomId(e.target.value)}
-          />
+          <div className="input-content">
+
+            <label htmlFor="roomId">Room ID</label>
+            <input
+              id="roomId"
+              className="lobby-input"
+              placeholder="Enter room ID"
+              onChange={e => setRoomId(e.target.value)}
+            />
+          </div>
         </div>
 
         <div className="button-group">

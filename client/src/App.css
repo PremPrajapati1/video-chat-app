@@ -1,5 +1,24 @@
 *{
   margin: 0;
   padding: 0;
-  overflow: hidden;
+  
+}
+
+:root {
+  --primary--color:#0c0a29;
+  --black--color:black;
+  --white--color:white;
+  --cream--color:#c8c8c8;
+  --white2--color:rgb(245, 245, 238);
+  --blue--color:#007BFF;
+  --gradient1--color:#24243e;
+  --gradient2--color:#302b63;
+  --gradient3--color:#0f0c29;
+  --whitesmoke--color:whitesmoke;
+  --lightskyblue--color:lightskyblue;
+  --deepskyblue--color:deepskyblue;
+  --darkgrey--color:#333;
+  --lightgrey--color:#555;
+  --lineargradient1--color:#1cb5e0;
+  --lineargradient2--color:#000046;
 }

@@ -4,13 +4,15 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  background: linear-gradient(90deg,rgba(2, 0, 36, 1) 0%, rgba(9, 9, 121, 1) 35%, rgba(0, 212, 255, 1) 100%); /* Blue gradient */
+ background: linear-gradient(to right, var(--lineargradient2--color),var(--lineargradient1--color)); /* Blue gradient */
   background-size: cover;
   background-position: center;
 }
 
 /* Semi-transparent login box */
 .auth-container form {
+  height: 280px; /* control container height */
+  width: 320px;
   background-color: rgba(255, 255, 255, 0.15); 
   backdrop-filter: blur(10px);
   padding: 40px;
@@ -18,21 +20,19 @@
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
   display: flex;
   flex-direction: column;
-  width: 250px;
-  height: 250px;
-  color: white;
+  color: var(--white--color);
 }
 
 /* Heading */
 .auth-container h2 {
   text-align: center;
-  color: #fff;
-  /* margin-bottom: 20px; */
+  color: var(--white--color);
+
 }
 
 /* Input fields */
 .auth-container input {
-  margin: 10px 0;
+  margin: 15px 0px 10px 0px;
   padding: 12px;
   border: none;
   border-radius: 8px;
@@ -41,27 +41,47 @@
 
 /* Submit button */
 .auth-container button {
-  margin-top: 10px;
+  margin-top: 20px;
   padding: 12px;
   border: none;
-  background-color: #ffffff;
-  color: #2a5298;
+  background-color: var( --darkgrey--color);
+  color: var(--white--color);
   font-weight: bold;
   font-size: 16px;
-  border-radius: 8px;
+  border-radius: 6px;
   cursor: pointer;
-  transition: background 0.3s ease;
+  transition: background-color 0.2s ease;
 }
 
 .auth-container button:hover {
-  background-color: #dce3f0;
+  background-color:var(--lightgrey--color);
 }
 
 /* Back link */
 .auth-container p {
   margin-top: 20px;
   text-align: center;
-  color: #f0f0f0;
+  color: var(--white--color);
   cursor: pointer;
   text-decoration: underline;
+}
+
+/* media--quries */
+@media screen and (max-width: 500px){
+.auth-container form{
+  height: 250px; 
+  width: 290px;
+}
+}
+
+@media screen and (max-width: 375px){
+.auth-container form{
+  width: 250px;
+}
+}
+
+@media screen and (max-width: 320px){
+.auth-container form{
+  width: 220px;
+}
 }

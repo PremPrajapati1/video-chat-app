@@ -1,21 +1,15 @@
-/* src/components/Welcome.css */
-
 .welcome-container {
   display: flex;
- /* background-image: url('./background.jpg');
- background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat; */
   flex-direction: column;
   align-items: center;
   justify-content: center;
   height: 100vh;
- background: linear-gradient(90deg,rgba(2, 0, 36, 1) 0%, rgba(9, 9, 121, 1) 35%, rgba(0, 212, 255, 1) 100%);
+  background: linear-gradient(90deg, var(--primary--color) 20%, var(--gradient3--color) 30%, var(--deepskyblue--color) 90%);
   text-align: center;
 }
+
 h1 {
-  font-size: 72px;
-  background: -webkit-linear-gradient(45deg, #eee, #333);
+  background: -webkit-linear-gradient(360deg, var(--white--color), var(--darkgrey--color));
   background-clip: content-box;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -31,33 +25,66 @@ h1 {
 .welcome-container .buttons {
   display: flex;
   flex-direction: column;
+}
 
-  
+.login-button {
+  margin-right: 10px;
 }
-.login-button{
-    margin-right: 10px;
-}
+
 .welcome-container button {
-  padding: 10px 20px;
+  padding: 15px 30px;
+  font-weight: bolder;
   font-size: 1rem;
   cursor: pointer;
-  background-color: rgb(216, 215, 215);
-  color: black;
-  border: black;
-  border-radius: 5px;
+  background-color: var(--white--color);
+  color: var(--darkgrey--color);
+  border: none;
+  outline: none;
+  border-radius: 10px;
   transition: background-color 0.3s;
 }
 
 .welcome-container button:hover {
-  background-color: #333;
-  font-size: 1.1rem;
-  color: white;
-  /* border-color: #333 solid 2px; */
+  background-color: var(--darkgrey--color);
+  color: var(--white--color);
 }
 
 .welcome-container .guest-link {
   margin-top: 15px;
-  color: whitesmoke;
+  color: var(--whitesmoke--color);
   cursor: pointer;
   text-decoration: underline;
+}
+
+/* media--quries */
+
+@media screen and (max-width: 768px){
+.welcome-container h1 {
+  font-size: 2rem;
+}
+.welcome-container button {
+  border-radius: 7px;
+}
+}
+
+@media screen and (max-width: 500px){
+.welcome-container h1 {
+  font-size: 1.3rem;
+}
+.welcome-container button {
+  padding: 10px 25px;
+  font-size: 0.9rem;
+}
+}
+
+@media screen and (max-width: 375px){
+.welcome-container h1 {
+  font-size: 1.2rem;
+}
+}
+
+@media screen and (max-width: 320px){
+.welcome-container h1 {
+  font-size: 1rem;
+}
 }

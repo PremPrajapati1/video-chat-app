@@ -1,131 +1,132 @@
 .room-container {
-  /* padding: 20px; */
+  height: 100vh;
+  width: 100vw;
   font-family: 'Segoe UI', sans-serif;
-  /* background-color: black; */
-  background: #020024;
-/* background: linear-gradient(90deg,rgba(2, 0, 36, 1) 0%, rgba(9, 9, 121, 1) 35%, rgba(0, 212, 255, 1) 100%); */
-  min-height: 100vh;
+  background-color: var(--primary--color);
 }
 
 .room-title {
   width: 100%;
   text-align: center;
-  color: #ccc;
-  font-size: 24px;
+  color: var(--white--color);
+  font-size: 1.7rem;
+  padding-top: 50px;
   margin-bottom: 20px;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.content-box {
+  height: auto;
+  width: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8rem;
+  padding-bottom: 3rem;
+  /*Add spacing so content doesn't overlap footer*/
+  background-color: var(--primary--color);
 }
 
 .video-container {
   display: flex;
   flex-grow: 1;
   flex-wrap: wrap;
-  gap: 20px;
-  margin-bottom: 20px;
+  gap: 1.5rem;
   justify-content: center;
-
 }
 
 video {
-  border: 2px solid #ccc;
+  border: 2px solid var(--white--color);
   border-radius: 10px;
-  width: 400px;
-  height: auto;
+  width: 450px;
+  height: 330px;
   align-items: center;
-}
-.both {
-  display: flex;
-  align-items: flex-start;
-  justify-content: flex-start;
+  background-color: var(--black--color);
 }
 
-.chat-container { 
-  width: 250px;
-  margin-right: 20px;
-  height: 500px;
-  /* background-color: #fff; */
-  background: white;
-  border: 1px solid #ccc;
-  padding: 10px;
-  /* text-align: center; */
-  border-radius: 10px;
+.chat-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-evenly;
+  width: 47%;
+  height: 280px;
+  background-color: var(--white--color);
+  padding: 0.8rem;
+  border-radius: 0.8rem;
+  margin-bottom: 0.5rem;
+  /* Reduced to avoid overlap with footer */
 }
 
 .chat-messages {
-  height: 420px;
-  overflow-y: auto;
-  margin-bottom: 10px;
-  border: 1px solid #eee;
+  min-height: 180px;
+  border: 1px solid var(--cream-color);
   border-radius: 5px;
   padding: 5px;
-  background-color: rgb(245, 245, 238);
-}
-
-.chat-messages p {
-  margin: 5px 0;
+  background-color: var(--white2--color);
 }
 
 .chat-input {
   display: flex;
   gap: 10px;
-
 }
 
 .chat-input input {
   flex: 1;
   padding: 10px;
-  border: 2px solid #007BFF; /* bright blue border for visibility */
+  border: 2px solid var(--blue--color);
   border-radius: 4px;
-  font-size: 10px;
-  background-color: rgb(207, 205, 205);
-  color: black;
+  font-size: 1rem;
+  background-color: var(--whitesmoke--color);
+  color: var(--black--color);
 }
 
 .chat-input button {
-  padding: 5px 10px;
+  padding: 10px;
   cursor: pointer;
-  border:#007BFF solid 2px; 
-  background-color: lightskyblue;
+  border: var(--blue--color) solid 2px;
+  background-color: var(--lightskyblue--color);
   border-radius: 4px;
   font-size: 14px;
   transition: background-color 0.2s ease;
 }
 
-/* Hover effect */
 .chat-input button:hover {
-  background-color: deepskyblue;
-  color: white;
-  border: #020024 solid 2px;
+  background-color: var(--deepskyblue--color);
+  color: var(--white--color);
+  border: var(--primary--color) solid 2px;
 }
 
 .controls-bar {
   position: fixed;
-  width: 76%;
+  width: 100%;
   bottom: 0;
   left: 0;
   right: 0;
   display: flex;
+  align-items: flex-end;
   justify-content: center;
-  gap: 20px;
+  background-color: var(--primary--color);
 }
 
-.footer{
+.footer {
   width: 76%;
   display: flex;
   justify-content: center;
-  gap: 20px;
+  gap: 1.2rem;
   padding: 15px 0;
-  border: 2px solid white;
+  border: 2px solid var(--white--color);
   border-bottom: none;
-  background: #0f0c29; 
+  background: var(--gradient3--color);
   border-radius: 20px 20px 0 0;
 }
 
 .controls-bar button {
-  background: #0f0c29;
-  background: -webkit-linear-gradient(to left, #24243e, #302b63, #0f0c29);
-  background: linear-gradient(to left, #24243e, #302b63, #0f0c29);
-  color: white;
-  border: whitesmoke;
+  background: var(--gradient3--color);
+  background: -webkit-linear-gradient(to left, var(--gradient1--color), var(--gradient2--color), var(--gradient3--color));
+  background: linear-gradient(to left, var(--gradient1--color), var(--gradient2--color), var(--gradient3--color));
+  color: var(--white--color);
+  border: var(--whitesmoke--color);
   padding: 10px 20px;
   font-size: 1rem;
   border-radius: 6px;
@@ -134,7 +135,131 @@ video {
 }
 
 .controls-bar button:hover {
-  background: white;
-  border: #020024;
-  color: black;
+  background: var(--white--color);
+  border: var(--primary--color);
+  color: var(--black--color);
+}
+
+@media screen and (max-width: 1440px) {
+  .chat-container {
+    width: 60%;
+    margin-bottom: 0.5rem;
+  }
+
+  .footer {
+    width: 90%;
+  }
+
+}
+
+@media screen and (max-width: 1300px) {
+
+  .content-box {
+    gap: 4rem;
+  }
+
+  video {
+    width: 390px;
+    height: 300px;
+  }
+
+  .room-title {
+    font-size: 1.65rem;
+
+    padding-top: 40px;
+
+  }
+}
+
+@media screen and (max-width: 1024px) {
+  .chat-container {
+    width: 75%;
+  }
+}
+
+@media screen and (max-width: 850px) {
+  .room-title {
+    font-size: 1.5rem;
+  }
+
+  .controls-bar {
+    position: sticky;
+  }
+
+}
+
+@media screen and (max-width: 450px) {
+  .room-title {
+    font-size: 1.1rem;
+  }
+
+  .content-box {
+    gap: 4rem;
+  }
+
+  video {
+    width: 350px;
+    height: 280px;
+    border: 1.5px solid var(--white--color);
+  }
+
+  .chat-container {
+    width: 88%;
+    margin-bottom: 0.2rem;
+  }
+
+  .footer {
+    width: 93%;
+    border-radius: 15px 15px 0 0;
+    border: 1.5px solid var(--white--color);
+  }
+
+  .controls-bar button {
+    font-size: 0.7rem;
+  }
+}
+
+@media screen and (max-width: 385px) {
+  .room-title {
+    font-size: 0.95rem;
+  }
+
+  video {
+    width: 320px;
+    height: 250px;
+  }
+
+  .chat-container {
+    width: 85%;
+    margin-bottom: 0.2rem;
+  }
+
+
+}
+
+@media screen and (max-width: 350px) {
+  .room-title {
+    font-size: 0.8rem;
+  }
+
+  video {
+    width: 300px;
+    height: 230px;
+  }
+
+  .chat-input {
+    gap: 5px;
+  }
+
+  .chat-input input {
+    border: 1.5px solid var(--blue--color);
+  }
+
+  .footer {
+    border-radius: 13px 13px 0 0;
+  }
+
+  .controls-bar button {
+    font-size: 0.5rem;
+  }
 }

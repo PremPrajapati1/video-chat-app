@@ -143,18 +143,11 @@ export default function Room() {
   };
 
   return (
-    <div className="room-container">
-      <div className="controls-bar">
-        <div className='footer'>
-          <button onClick={toggleMute}>{isMuted ? 'Unmute' : 'Mute'}</button>
-          <button onClick={toggleCamera}>{isCameraOff ? 'Turn Camera On' : 'Turn Camera Off'}</button>
-          <button onClick={leaveRoom}>Leave Room</button>
-        </div>
-      </div>
 
+    <div className="room-container">
       <h2 className="room-title">Room: {roomId}</h2>
 
-      <div className="both">
+      <div className="content-box">
         <div className="video-container">
           <video ref={localVideo} autoPlay muted playsInline />
           <video ref={remoteVideo} autoPlay playsInline />
@@ -178,8 +171,16 @@ export default function Room() {
             />
             <button onClick={sendMessage}>Send</button>
           </div>
+      </div>
+        </div>
+      <div className="controls-bar">
+        <div className='footer'>
+          <button onClick={toggleMute}>{isMuted ? 'Unmute' : 'Mute'}</button>
+          <button onClick={toggleCamera}>{isCameraOff ? 'Turn Camera On' : 'Turn Camera Off'}</button>
+          <button onClick={leaveRoom}>Leave Room</button>
         </div>
       </div>
     </div>
+
   );
 }
