@@ -13,10 +13,24 @@ export default function Room() {
   const peerRef = useRef();
   const localStreamRef = useRef();
 
+  const joinSound = useRef(new Audio('/sounds/join.mp3'));
+  const disconnectSound = useRef(new Audio('/sounds/disconnect.mp3'));
+
   const [chat, setChat] = useState([]);
   const [message, setMessage] = useState('');
   const [isMuted, setIsMuted] = useState(false);
   const [isCameraOff, setIsCameraOff] = useState(false);
+
+  // Autoplay workaround: load audio on first click
+  useEffect(() => {
+    const enableAudio = () => {
+      joinSound.current.load();
+      disconnectSound.current.load();
+      document.removeEventListener('click', enableAudio);
+    };
+    document.addEventListener('click', enableAudio);
+    return () => document.removeEventListener('click', enableAudio);
+  }, []);
 
   useEffect(() => {
     const startMedia = async () => {
@@ -58,6 +72,27 @@ export default function Room() {
 
     socket.on('user-joined', ({ id }) => {
       peerRef.current = createPeer(id, true);
+
+      // Play join sound
+      setTimeout(() => {
+        if (joinSound.current) {
+          joinSound.current.pause();
+          joinSound.current.currentTime = 0;
+          joinSound.current.play().catch(err => {
+            console.warn('Join sound autoplay blocked:', err);
+          });
+        }
+      }, 300);
+    });
+
+    socket.on('user-left', () => {
+      if (disconnectSound.current) {
+        disconnectSound.current.pause();
+        disconnectSound.current.currentTime = 0;
+        disconnectSound.current.play().catch(err => {
+          console.warn('Disconnect sound autoplay blocked:', err);
+        });
+      }
     });
 
     socket.on('signal', async ({ from, data }) => {
@@ -96,6 +131,7 @@ export default function Room() {
 
     return () => {
       socket.off('user-joined');
+      socket.off('user-left');
       socket.off('signal');
       socket.off('chat-message');
     };
@@ -143,7 +179,6 @@ export default function Room() {
   };
 
   return (
-
     <div className="room-container">
       <h2 className="room-title">Room: {roomId}</h2>
 
@@ -171,16 +206,16 @@ export default function Room() {
             />
             <button onClick={sendMessage}>Send</button>
           </div>
-      </div>
         </div>
+      </div>
+
       <div className="controls-bar">
-        <div className='footer'>
+        <div className="footer">
           <button onClick={toggleMute}>{isMuted ? 'Unmute' : 'Mute'}</button>
           <button onClick={toggleCamera}>{isCameraOff ? 'Turn Camera On' : 'Turn Camera Off'}</button>
           <button onClick={leaveRoom}>Leave Room</button>
         </div>
       </div>
     </div>
-
   );
 }
