@@ -4,7 +4,6 @@
   "private": true,
   "homepage": ".",
   "dependencies": {
-    "framer-motion": "^12.18.1",
     "postcss-value-parser": "^4.2.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
