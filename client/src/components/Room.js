@@ -147,7 +147,7 @@ export default function Room() {
 
       <h2 className="room-title">Room: {roomId}</h2>
 
-      <div className="both">
+      <div className="content-box">
         <div className="video-container">
           <video ref={localVideo} autoPlay muted playsInline />
           <video ref={remoteVideo} autoPlay playsInline />
