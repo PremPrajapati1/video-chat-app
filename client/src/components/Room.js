@@ -10,10 +10,13 @@ export default function Room() {
 
   const localVideo = useRef();
   const peersRef = useRef({});
-  const localStreamRef = useRef();  
+  const localStreamRef = useRef();
   const [remoteStreams, setRemoteStreams] = useState({});
-  const [chat,setChat]=useState([]); const [message,setMessage]=useState('');
-  const [isMuted,setIsMuted]=useState(false), [isCameraOff,setIsCameraOff]=useState(false);
+
+  const [chat, setChat] = useState([]);
+  const [message, setMessage] = useState('');
+  const [isMuted, setIsMuted] = useState(false);
+  const [isCameraOff, setIsCameraOff] = useState(false);
 
   const [videoDevices, setVideoDevices] = useState([]);
   const [currentDeviceIndex, setCurrentDeviceIndex] = useState(0);
@@ -23,8 +26,8 @@ export default function Room() {
 
   useEffect(() => {
     const init = async () => {
-      const devs = await navigator.mediaDevices.enumerateDevices();
-      const cams = devs.filter(d => d.kind === 'videoinput');
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const cams = devices.filter(d => d.kind === 'videoinput');
       if (cams.length === 0) return alert('No camera found');
       setVideoDevices(cams);
       await switchStream(cams[0].deviceId);
@@ -34,18 +37,20 @@ export default function Room() {
   }, [roomId, username]);
 
   const switchStream = async deviceId => {
-    const stream = await navigator.mediaDevices.getUserMedia({ video: { deviceId: { exact: deviceId } }, audio: true });
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { deviceId: { exact: deviceId } },
+      audio: true,
+    });
     if (localStreamRef.current) localStreamRef.current.getTracks().forEach(t => t.stop());
     localStreamRef.current = stream;
     if (localVideo.current) localVideo.current.srcObject = stream;
 
-    // update peer tracks
     Object.values(peersRef.current).forEach(peer => {
       const videoTrack = stream.getVideoTracks()[0];
       const audioTrack = stream.getAudioTracks()[0];
       peer.getSenders().forEach(sender => {
-        if (sender.track.kind==='video') sender.replaceTrack(videoTrack);
-        if (sender.track.kind==='audio') sender.replaceTrack(audioTrack);
+        if (sender.track.kind === 'video') sender.replaceTrack(videoTrack);
+        if (sender.track.kind === 'audio') sender.replaceTrack(audioTrack);
       });
     });
   };
@@ -61,7 +66,6 @@ export default function Room() {
     const peer = new RTCPeerConnection({
       iceServers: [
         { urls: 'stun:stun.l.google.com:19302' },
-        { urls:'turn:openrelay.metered.ca:80', username:'openrelayproject', credential:'openrelayproject' },
       ]
     });
 
@@ -82,6 +86,7 @@ export default function Room() {
         socket.emit('signal', { to: id, data: { sdp: o } });
       });
     }
+
     return peer;
   };
 
@@ -93,19 +98,24 @@ export default function Room() {
     });
 
     socket.on('signal', async ({ from, data }) => {
-      if (!peersRef.current[from]) peersRef.current[from]=createPeer(from,false);
-      const p = peersRef.current[from];
+      if (!peersRef.current[from]) peersRef.current[from] = createPeer(from, false);
+      const peer = peersRef.current[from];
+
       if (data.sdp) {
-        await p.setRemoteDescription(new RTCSessionDescription(data.sdp));
+        await peer.setRemoteDescription(new RTCSessionDescription(data.sdp));
         if (data.sdp.type === 'offer') {
-          const answer = await p.createAnswer();
-          p.setLocalDescription(answer);
-          socket.emit('signal',{ to: from, data:{ sdp:answer } });
+          const answer = await peer.createAnswer();
+          peer.setLocalDescription(answer);
+          socket.emit('signal', { to: from, data: { sdp: answer } });
         }
       }
+
       if (data.candidate) {
-        try { await p.addIceCandidate(new RTCIceCandidate(data.candidate)); }
-        catch(e){ console.error('ICE failed', e); }
+        try {
+          await peer.addIceCandidate(new RTCIceCandidate(data.candidate));
+        } catch (err) {
+          console.error('Failed to add ICE candidate:', err);
+        }
       }
     });
 
@@ -121,51 +131,82 @@ export default function Room() {
       disconnectSound.current.play();
     });
 
-    socket.on('chat-message', ({username,message})=>{
-      setChat(prev=>[...prev,{ username, message }]);
+    socket.on('chat-message', ({ username, message }) => {
+      setChat(prev => [...prev, { username, message }]);
     });
 
     return () => socket.off();
   }, [roomId]);
 
-  const sendMessage=()=>{
-    if(!message.trim()) return;
-    socket.emit('chat-message',{roomId,username,message});
-    setChat(prev=>[...prev,{username,message}]);
+  const sendMessage = () => {
+    if (!message.trim()) return;
+    socket.emit('chat-message', { roomId, username, message });
+    setChat(prev => [...prev, { username, message }]);
     setMessage('');
   };
 
-  const leaveRoom = ()=>{
-    Object.values(peersRef.current).forEach(p=>p.close());
+  const leaveRoom = () => {
+    Object.values(peersRef.current).forEach(p => p.close());
     peersRef.current = {};
     setRemoteStreams({});
-    localStreamRef.current.getTracks().forEach(t=>t.stop());
+    if (localStreamRef.current) localStreamRef.current.getTracks().forEach(t => t.stop());
     socket.emit('leave-room', { roomId, username });
     window.location.href = '/';
   };
 
   return (
     <div className="room-container">
-      <h2>Room: {roomId}</h2>
-      <div className="video-container">
-        <video ref={localVideo} autoPlay muted />
-        {Object.entries(remoteStreams).map(([id, stream])=>(
-          <video key={id} autoPlay playsInline
-            ref={el => { if(el) el.srcObject = stream; }} />
-        ))}
+      <h2 className="room-title">Room: {roomId}</h2>
+
+      <div className="content-box">
+        <div className="video-container">
+          <video ref={localVideo} autoPlay muted playsInline />
+          {Object.entries(remoteStreams).map(([id, stream]) => (
+            <video key={id} autoPlay playsInline
+              ref={el => { if (el) el.srcObject = stream; }} />
+          ))}
+        </div>
+
+        <div className="chat-container">
+          <h3 style={{ textAlign: 'center' }}>Chat</h3>
+          <div className="chat-messages">
+            {chat.map((msg, i) => (
+              <p key={i}>
+                <b>{msg.username === username ? 'Me' : msg.username}:</b> {msg.message}
+              </p>
+            ))}
+          </div>
+          <div className="chat-input">
+            <input
+              value={message}
+              onChange={e => setMessage(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === 'Enter') sendMessage();
+              }}
+              placeholder="Type a message..."
+            />
+            <button onClick={sendMessage}>Send</button>
+          </div>
+        </div>
       </div>
 
-      {/* chat omitted for brevity */}
-
       <div className="controls-bar">
-        <button onClick={() => { localStreamRef.current.getAudioTracks().forEach(t=>t.enabled=isMuted); setIsMuted(!isMuted)} }>
-          {isMuted?'Unmute':'Mute'}
-        </button>
-        <button onClick={() => { localStreamRef.current.getVideoTracks().forEach(t=>t.enabled=isCameraOff); setIsCameraOff(!isCameraOff)} }>
-          {isCameraOff?'Turn camera on':'Turn camera off'}
-        </button>
-        <button onClick={switchCamera}>Switch Camera</button>
-        <button onClick={leaveRoom}>Leave Room</button>
+        <div className="footer">
+          <button onClick={() => {
+            localStreamRef.current.getAudioTracks().forEach(t => t.enabled = isMuted);
+            setIsMuted(!isMuted);
+          }}>
+            {isMuted ? 'Unmute' : 'Mute'}
+          </button>
+          <button onClick={() => {
+            localStreamRef.current.getVideoTracks().forEach(t => t.enabled = isCameraOff);
+            setIsCameraOff(!isCameraOff);
+          }}>
+            {isCameraOff ? 'Turn Camera On' : 'Turn Camera Off'}
+          </button>
+          <button onClick={switchCamera}>Switch Camera</button>
+          <button onClick={leaveRoom}>Leave Room</button>
+        </div>
       </div>
     </div>
   );
