@@ -18,19 +18,77 @@ export default function Room() {
   const [isMuted, setIsMuted] = useState(false);
   const [isCameraOff, setIsCameraOff] = useState(false);
 
+  const [videoDevices, setVideoDevices] = useState([]);
+  const [currentDeviceIndex, setCurrentDeviceIndex] = useState(0);
+
+  const joinSound = useRef(new Audio('/sounds/join.mp3'));
+  const disconnectSound = useRef(new Audio('/sounds/disconnect.mp3'));
+
   useEffect(() => {
-    const startMedia = async () => {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-      localStreamRef.current = stream;
-      localVideo.current.srcObject = stream;
-      socket.emit('join-room', { roomId, username });
+    const getDevicesAndStart = async () => {
+      try {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const videoInputs = devices.filter(d => d.kind === 'videoinput');
+        if (videoInputs.length === 0) {
+          alert('No camera found.');
+          return;
+        }
+        setVideoDevices(videoInputs);
+        setCurrentDeviceIndex(0);
+        await startStream(videoInputs[0].deviceId);
+        socket.emit('join-room', { roomId, username });
+      } catch (err) {
+        console.error('Device error:', err);
+        alert('Please allow access to camera/mic.');
+      }
     };
-    startMedia();
+    getDevicesAndStart();
   }, [username, roomId]);
+
+  const startStream = async (deviceId) => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { deviceId: { exact: deviceId } },
+        audio: true,
+      });
+
+      if (localStreamRef.current) {
+        localStreamRef.current.getTracks().forEach(track => track.stop());
+      }
+
+      localStreamRef.current = stream;
+      if (localVideo.current) {
+        localVideo.current.srcObject = stream;
+      }
+
+      // If peer exists, replace tracks
+      if (peerRef.current) {
+        const senders = peerRef.current.getSenders();
+        const videoTrack = stream.getVideoTracks()[0];
+        const audioTrack = stream.getAudioTracks()[0];
+
+        senders.forEach(sender => {
+          if (sender.track.kind === 'video') sender.replaceTrack(videoTrack);
+          if (sender.track.kind === 'audio') sender.replaceTrack(audioTrack);
+        });
+      }
+    } catch (error) {
+      console.error('startStream error:', error);
+    }
+  };
+
+  const switchCamera = async () => {
+    if (videoDevices.length < 2) return;
+    const nextIndex = (currentDeviceIndex + 1) % videoDevices.length;
+    setCurrentDeviceIndex(nextIndex);
+    await startStream(videoDevices[nextIndex].deviceId);
+  };
 
   useEffect(() => {
     const createPeer = (id, initiator) => {
-      const peer = new RTCPeerConnection();
+      const peer = new RTCPeerConnection({
+        iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
+      });
 
       localStreamRef.current.getTracks().forEach(track => {
         peer.addTrack(track, localStreamRef.current);
@@ -58,6 +116,13 @@ export default function Room() {
 
     socket.on('user-joined', ({ id }) => {
       peerRef.current = createPeer(id, true);
+      joinSound.current.currentTime = 0;
+      joinSound.current.play();
+    });
+
+    socket.on('user-disconnected', () => {
+      disconnectSound.current.currentTime = 0;
+      disconnectSound.current.play();
     });
 
     socket.on('signal', async ({ from, data }) => {
@@ -67,7 +132,6 @@ export default function Room() {
 
       if (data.sdp) {
         await peerRef.current.setRemoteDescription(new RTCSessionDescription(data.sdp));
-
         if (data.sdp.type === 'offer') {
           const answer = await peerRef.current.createAnswer();
           await peerRef.current.setLocalDescription(answer);
@@ -79,13 +143,13 @@ export default function Room() {
         if (peerRef.current.remoteDescription) {
           await peerRef.current.addIceCandidate(new RTCIceCandidate(data.candidate));
         } else {
-          const waitForRemote = async () => {
+          const wait = async () => {
             while (!peerRef.current.remoteDescription) {
-              await new Promise(resolve => setTimeout(resolve, 100));
+              await new Promise(r => setTimeout(r, 100));
             }
             await peerRef.current.addIceCandidate(new RTCIceCandidate(data.candidate));
           };
-          waitForRemote();
+          wait();
         }
       }
     });
@@ -96,6 +160,7 @@ export default function Room() {
 
     return () => {
       socket.off('user-joined');
+      socket.off('user-disconnected');
       socket.off('signal');
       socket.off('chat-message');
     };
@@ -111,9 +176,7 @@ export default function Room() {
   const toggleMute = () => {
     const stream = localStreamRef.current;
     if (stream) {
-      stream.getAudioTracks().forEach(track => {
-        track.enabled = isMuted;
-      });
+      stream.getAudioTracks().forEach(track => (track.enabled = isMuted));
       setIsMuted(!isMuted);
     }
   };
@@ -121,9 +184,7 @@ export default function Room() {
   const toggleCamera = () => {
     const stream = localStreamRef.current;
     if (stream) {
-      stream.getVideoTracks().forEach(track => {
-        track.enabled = isCameraOff;
-      });
+      stream.getVideoTracks().forEach(track => (track.enabled = isCameraOff));
       setIsCameraOff(!isCameraOff);
     }
   };
@@ -144,17 +205,9 @@ export default function Room() {
 
   return (
     <div className="room-container">
-      <div className="controls-bar">
-        <div className='footer'>
-          <button onClick={toggleMute}>{isMuted ? 'Unmute' : 'Mute'}</button>
-          <button onClick={toggleCamera}>{isCameraOff ? 'Turn Camera On' : 'Turn Camera Off'}</button>
-          <button onClick={leaveRoom}>Leave Room</button>
-        </div>
-      </div>
-
       <h2 className="room-title">Room: {roomId}</h2>
 
-      <div className="both">
+      <div className="content-box">
         <div className="video-container">
           <video ref={localVideo} autoPlay muted playsInline />
           <video ref={remoteVideo} autoPlay playsInline />
@@ -164,7 +217,9 @@ export default function Room() {
           <h3 style={{ textAlign: 'center' }}>Chat</h3>
           <div className="chat-messages">
             {chat.map((msg, i) => (
-              <p key={i}><b>{msg.username === username ? 'Me' : msg.username}:</b> {msg.message}</p>
+              <p key={i}>
+                <b>{msg.username === username ? 'Me' : msg.username}:</b> {msg.message}
+              </p>
             ))}
           </div>
           <div className="chat-input">
@@ -178,6 +233,15 @@ export default function Room() {
             />
             <button onClick={sendMessage}>Send</button>
           </div>
+        </div>
+      </div>
+
+      <div className="controls-bar">
+        <div className="footer">
+          <button onClick={toggleMute}>{isMuted ? 'Unmute' : 'Mute'}</button>
+          <button onClick={toggleCamera}>{isCameraOff ? 'Turn Camera On' : 'Turn Camera Off'}</button>
+          <button onClick={switchCamera}>Switch Camera</button>
+          <button onClick={leaveRoom}>Leave Room</button>
         </div>
       </div>
     </div>
