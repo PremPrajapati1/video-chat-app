@@ -12,13 +12,14 @@ export default function Room() {
   const peersRef = useRef({});
   const localStreamRef = useRef();
 
-  const [remoteStreams, setRemoteStreams] = useState({});
   const [chat, setChat] = useState([]);
   const [message, setMessage] = useState('');
   const [isMuted, setIsMuted] = useState(false);
   const [isCameraOff, setIsCameraOff] = useState(false);
+
   const [videoDevices, setVideoDevices] = useState([]);
   const [currentDeviceIndex, setCurrentDeviceIndex] = useState(0);
+  const [remoteStreams, setRemoteStreams] = useState({});
 
   const joinSound = useRef(new Audio('/sounds/join.mp3'));
   const disconnectSound = useRef(new Audio('/sounds/disconnect.mp3'));
@@ -42,7 +43,7 @@ export default function Room() {
       }
     };
     getDevicesAndStart();
-  }, [roomId, username]);
+  }, [username, roomId]);
 
   const startStream = async (deviceId) => {
     try {
@@ -60,14 +61,13 @@ export default function Room() {
         localVideo.current.srcObject = stream;
       }
 
-      // Replace tracks on all peers
       Object.values(peersRef.current).forEach(peer => {
         const senders = peer.getSenders();
         const videoTrack = stream.getVideoTracks()[0];
         const audioTrack = stream.getAudioTracks()[0];
         senders.forEach(sender => {
-          if (sender.track?.kind === 'video' && videoTrack) sender.replaceTrack(videoTrack);
-          if (sender.track?.kind === 'audio' && audioTrack) sender.replaceTrack(audioTrack);
+          if (sender.track.kind === 'video' && videoTrack) sender.replaceTrack(videoTrack);
+          if (sender.track.kind === 'audio' && audioTrack) sender.replaceTrack(audioTrack);
         });
       });
     } catch (error) {
@@ -75,29 +75,34 @@ export default function Room() {
     }
   };
 
+  const switchCamera = async () => {
+    if (videoDevices.length < 2) return;
+    const nextIndex = (currentDeviceIndex + 1) % videoDevices.length;
+    setCurrentDeviceIndex(nextIndex);
+    await startStream(videoDevices[nextIndex].deviceId);
+  };
+
   const createPeer = (id, initiator) => {
     const peer = new RTCPeerConnection({
       iceServers: [
         { urls: 'stun:stun.l.google.com:19302' },
         {
-          urls: 'turn:relay.metered.ca:443',
+          urls: 'turn:openrelay.metered.ca:80',
           username: 'openrelayproject',
-          credential: 'openrelayproject'
-        }
-      ]
+          credential: 'openrelayproject',
+        },
+      ],
     });
 
-    localStreamRef.current?.getTracks().forEach(track => {
+    localStreamRef.current.getTracks().forEach(track => {
       peer.addTrack(track, localStreamRef.current);
     });
 
     const remoteStream = new MediaStream();
-    setRemoteStreams(prev => ({ ...prev, [id]: remoteStream }));
 
     peer.ontrack = event => {
-      event.streams[0]?.getTracks().forEach(track => {
-        remoteStream.addTrack(track);
-      });
+      remoteStream.addTrack(event.track);
+      setRemoteStreams(prev => ({ ...prev, [id]: remoteStream }));
     };
 
     peer.onicecandidate = e => {
@@ -107,15 +112,10 @@ export default function Room() {
     };
 
     if (initiator) {
-      peer.onnegotiationneeded = async () => {
-        try {
-          const offer = await peer.createOffer();
-          await peer.setLocalDescription(offer);
-          socket.emit('signal', { to: id, data: { sdp: offer } });
-        } catch (err) {
-          console.error('Negotiation error:', err);
-        }
-      };
+      peer.createOffer().then(offer => {
+        peer.setLocalDescription(offer);
+        socket.emit('signal', { to: id, data: { sdp: offer } });
+      });
     }
 
     return peer;
@@ -134,11 +134,11 @@ export default function Room() {
       if (peersRef.current[id]) {
         peersRef.current[id].close();
         delete peersRef.current[id];
+        setRemoteStreams(prev => {
+          const { [id]: _, ...rest } = prev;
+          return rest;
+        });
       }
-      setRemoteStreams(prev => {
-        const { [id]: _, ...rest } = prev;
-        return rest;
-      });
       disconnectSound.current.currentTime = 0;
       disconnectSound.current.play();
     });
@@ -203,19 +203,15 @@ export default function Room() {
     }
   };
 
-  const switchCamera = async () => {
-    if (videoDevices.length < 2) return;
-    const nextIndex = (currentDeviceIndex + 1) % videoDevices.length;
-    setCurrentDeviceIndex(nextIndex);
-    await startStream(videoDevices[nextIndex].deviceId);
-  };
-
   const leaveRoom = () => {
     Object.values(peersRef.current).forEach(peer => peer.close());
     peersRef.current = {};
+
     if (localStreamRef.current) {
       localStreamRef.current.getTracks().forEach(track => track.stop());
     }
+
+    setRemoteStreams({});
     socket.emit('leave-room', { roomId, username });
     window.location.href = '/';
   };
@@ -233,7 +229,7 @@ export default function Room() {
               autoPlay
               playsInline
               ref={video => {
-                if (video && stream) video.srcObject = stream;
+                if (video) video.srcObject = stream;
               }}
             />
           ))}
