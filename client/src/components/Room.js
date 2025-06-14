@@ -18,66 +18,15 @@ export default function Room() {
   const [isMuted, setIsMuted] = useState(false);
   const [isCameraOff, setIsCameraOff] = useState(false);
 
-  // Camera switching
-  const [videoDevices, setVideoDevices] = useState([]);
-  const [currentDeviceIndex, setCurrentDeviceIndex] = useState(0);
-
-  // Sound effects
-  const joinSound = useRef(new Audio('/sounds/join.mp3'));
-  const disconnectSound = useRef(new Audio('/sounds/disconnect.mp3'));
-
-  // Get devices and start video
   useEffect(() => {
-    const getDevicesAndStart = async () => {
-      try {
-        const devices = await navigator.mediaDevices.enumerateDevices();
-        const videoInputs = devices.filter(d => d.kind === 'videoinput');
-        if (videoInputs.length === 0) {
-          alert('No video devices found.');
-          return;
-        }
-
-        setVideoDevices(videoInputs);
-        setCurrentDeviceIndex(0);
-        await startStream(videoInputs[0].deviceId);
-
-        socket.emit('join-room', { roomId, username });
-      } catch (err) {
-        console.error('Error accessing media devices:', err);
-        alert('Please allow camera and microphone access.');
-      }
-    };
-
-    getDevicesAndStart();
-  }, [username, roomId]);
-
-  const startStream = async (deviceId) => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { deviceId: { exact: deviceId } },
-        audio: true
-      });
-
-      if (localStreamRef.current) {
-        localStreamRef.current.getTracks().forEach(track => track.stop());
-      }
-
+    const startMedia = async () => {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
       localStreamRef.current = stream;
-      if (localVideo.current) {
-        localVideo.current.srcObject = stream;
-      }
-    } catch (error) {
-      console.error('startStream error:', error);
-    }
-  };
-
-  const switchCamera = async () => {
-    if (videoDevices.length < 2) return;
-    const nextIndex = (currentDeviceIndex + 1) % videoDevices.length;
-    const nextDeviceId = videoDevices[nextIndex].deviceId;
-    setCurrentDeviceIndex(nextIndex);
-    await startStream(nextDeviceId);
-  };
+      localVideo.current.srcObject = stream;
+      socket.emit('join-room', { roomId, username });
+    };
+    startMedia();
+  }, [username, roomId]);
 
   useEffect(() => {
     const createPeer = (id, initiator) => {
@@ -109,13 +58,6 @@ export default function Room() {
 
     socket.on('user-joined', ({ id }) => {
       peerRef.current = createPeer(id, true);
-      joinSound.current.currentTime = 0;
-      joinSound.current.play();
-    });
-
-    socket.on('user-disconnected', ({ id }) => {
-      disconnectSound.current.currentTime = 0;
-      disconnectSound.current.play();
     });
 
     socket.on('signal', async ({ from, data }) => {
@@ -125,6 +67,7 @@ export default function Room() {
 
       if (data.sdp) {
         await peerRef.current.setRemoteDescription(new RTCSessionDescription(data.sdp));
+
         if (data.sdp.type === 'offer') {
           const answer = await peerRef.current.createAnswer();
           await peerRef.current.setLocalDescription(answer);
@@ -153,7 +96,6 @@ export default function Room() {
 
     return () => {
       socket.off('user-joined');
-      socket.off('user-disconnected');
       socket.off('signal');
       socket.off('chat-message');
     };
@@ -202,9 +144,17 @@ export default function Room() {
 
   return (
     <div className="room-container">
+      <div className="controls-bar">
+        <div className='footer'>
+          <button onClick={toggleMute}>{isMuted ? 'Unmute' : 'Mute'}</button>
+          <button onClick={toggleCamera}>{isCameraOff ? 'Turn Camera On' : 'Turn Camera Off'}</button>
+          <button onClick={leaveRoom}>Leave Room</button>
+        </div>
+      </div>
+
       <h2 className="room-title">Room: {roomId}</h2>
 
-      <div className="content-box">
+      <div className="both">
         <div className="video-container">
           <video ref={localVideo} autoPlay muted playsInline />
           <video ref={remoteVideo} autoPlay playsInline />
@@ -228,15 +178,6 @@ export default function Room() {
             />
             <button onClick={sendMessage}>Send</button>
           </div>
-        </div>
-      </div>
-
-      <div className="controls-bar">
-        <div className='footer'>
-          <button onClick={toggleMute}>{isMuted ? 'Unmute' : 'Mute'}</button>
-          <button onClick={toggleCamera}>{isCameraOff ? 'Turn Camera On' : 'Turn Camera Off'}</button>
-          <button onClick={switchCamera}>Switch Camera</button>
-          <button onClick={leaveRoom}>Leave Room</button>
         </div>
       </div>
     </div>
