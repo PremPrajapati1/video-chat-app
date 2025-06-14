@@ -10,7 +10,7 @@ export default function Room() {
 
   const localVideo = useRef();
   const remoteVideo = useRef();
-  const peerRef = useRef();
+  const peersRef = useRef({});
   const localStreamRef = useRef();
 
   const [chat, setChat] = useState([]);
@@ -61,17 +61,16 @@ export default function Room() {
         localVideo.current.srcObject = stream;
       }
 
-      // If peer exists, replace tracks
-      if (peerRef.current) {
-        const senders = peerRef.current.getSenders();
+      // Replace tracks on all peers
+      Object.values(peersRef.current).forEach(peer => {
+        const senders = peer.getSenders();
         const videoTrack = stream.getVideoTracks()[0];
         const audioTrack = stream.getAudioTracks()[0];
-
         senders.forEach(sender => {
-          if (sender.track.kind === 'video') sender.replaceTrack(videoTrack);
-          if (sender.track.kind === 'audio') sender.replaceTrack(audioTrack);
+          if (sender.track.kind === 'video' && videoTrack) sender.replaceTrack(videoTrack);
+          if (sender.track.kind === 'audio' && audioTrack) sender.replaceTrack(audioTrack);
         });
-      }
+      });
     } catch (error) {
       console.error('startStream error:', error);
     }
@@ -84,72 +83,80 @@ export default function Room() {
     await startStream(videoDevices[nextIndex].deviceId);
   };
 
-  useEffect(() => {
-    const createPeer = (id, initiator) => {
-      const peer = new RTCPeerConnection({
-        iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
-      });
-
-      localStreamRef.current.getTracks().forEach(track => {
-        peer.addTrack(track, localStreamRef.current);
-      });
-
-      peer.onicecandidate = e => {
-        if (e.candidate) {
-          socket.emit('signal', { to: id, data: { candidate: e.candidate } });
-        }
-      };
-
-      peer.ontrack = e => {
-        remoteVideo.current.srcObject = e.streams[0];
-      };
-
-      if (initiator) {
-        peer.createOffer().then(offer => {
-          peer.setLocalDescription(offer);
-          socket.emit('signal', { to: id, data: { sdp: offer } });
-        });
-      }
-
-      return peer;
-    };
-
-    socket.on('user-joined', ({ id }) => {
-      peerRef.current = createPeer(id, true);
-      joinSound.current.currentTime = 0;
-      joinSound.current.play();
+  const createPeer = (id, initiator) => {
+    const peer = new RTCPeerConnection({
+      iceServers: [
+        { urls: 'stun:stun.l.google.com:19302' }
+        // Add TURN server here if needed
+      ]
     });
 
-    socket.on('user-disconnected', () => {
+    localStreamRef.current.getTracks().forEach(track => {
+      peer.addTrack(track, localStreamRef.current);
+    });
+
+    const remoteStream = new MediaStream();
+    remoteVideo.current.srcObject = remoteStream;
+
+    peer.ontrack = event => {
+      remoteStream.addTrack(event.track);
+    };
+
+    peer.onicecandidate = e => {
+      if (e.candidate) {
+        socket.emit('signal', { to: id, data: { candidate: e.candidate } });
+      }
+    };
+
+    if (initiator) {
+      peer.createOffer().then(offer => {
+        peer.setLocalDescription(offer);
+        socket.emit('signal', { to: id, data: { sdp: offer } });
+      });
+    }
+
+    return peer;
+  };
+
+  useEffect(() => {
+    socket.on('user-joined', ({ id }) => {
+      if (!peersRef.current[id]) {
+        peersRef.current[id] = createPeer(id, true);
+        joinSound.current.currentTime = 0;
+        joinSound.current.play();
+      }
+    });
+
+    socket.on('user-disconnected', ({ id }) => {
+      if (peersRef.current[id]) {
+        peersRef.current[id].close();
+        delete peersRef.current[id];
+      }
       disconnectSound.current.currentTime = 0;
       disconnectSound.current.play();
     });
 
     socket.on('signal', async ({ from, data }) => {
-      if (!peerRef.current) {
-        peerRef.current = createPeer(from, false);
+      if (!peersRef.current[from]) {
+        peersRef.current[from] = createPeer(from, false);
       }
 
+      const peer = peersRef.current[from];
+
       if (data.sdp) {
-        await peerRef.current.setRemoteDescription(new RTCSessionDescription(data.sdp));
+        await peer.setRemoteDescription(new RTCSessionDescription(data.sdp));
         if (data.sdp.type === 'offer') {
-          const answer = await peerRef.current.createAnswer();
-          await peerRef.current.setLocalDescription(answer);
+          const answer = await peer.createAnswer();
+          await peer.setLocalDescription(answer);
           socket.emit('signal', { to: from, data: { sdp: answer } });
         }
       }
 
       if (data.candidate) {
-        if (peerRef.current.remoteDescription) {
-          await peerRef.current.addIceCandidate(new RTCIceCandidate(data.candidate));
-        } else {
-          const wait = async () => {
-            while (!peerRef.current.remoteDescription) {
-              await new Promise(r => setTimeout(r, 100));
-            }
-            await peerRef.current.addIceCandidate(new RTCIceCandidate(data.candidate));
-          };
-          wait();
+        try {
+          await peer.addIceCandidate(new RTCIceCandidate(data.candidate));
+        } catch (err) {
+          console.error('Failed to add ICE candidate:', err);
         }
       }
     });
@@ -190,10 +197,8 @@ export default function Room() {
   };
 
   const leaveRoom = () => {
-    if (peerRef.current) {
-      peerRef.current.close();
-      peerRef.current = null;
-    }
+    Object.values(peersRef.current).forEach(peer => peer.close());
+    peersRef.current = {};
 
     if (localStreamRef.current) {
       localStreamRef.current.getTracks().forEach(track => track.stop());
