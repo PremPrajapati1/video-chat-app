@@ -7,9 +7,12 @@ const cors = require('cors');
 const app = express();
 
 // Enable CORS for your frontend's origin
+const CLIENT_ORIGIN = "https://video-chat-client-9k8a.onrender.com"; // ✅ Replace with actual frontend URL if it changes
+
 app.use(cors({
-  origin: "https://video-chat-client-9k8a.onrender.com", // Replace with actual frontend URL
-  methods: ["GET", "POST"]
+  origin: CLIENT_ORIGIN,
+  methods: ["GET", "POST"],
+  credentials: true
 }));
 
 // Serve static files from React build folder
@@ -21,7 +24,7 @@ const server = http.createServer(app);
 // Initialize Socket.IO
 const io = new Server(server, {
   cors: {
-    origin: "https://video-chat-client-9k8a.onrender.com", // Replace with actual frontend URL
+    origin: CLIENT_ORIGIN,
     methods: ["GET", "POST"],
     credentials: true
   },
@@ -30,12 +33,12 @@ const io = new Server(server, {
 
 // --- SOCKET.IO LOGIC ---
 io.on('connection', (socket) => {
-  console.log(`User connected: ${socket.id}`);
+  console.log(`📡 User connected: ${socket.id}`);
 
   socket.on('join-room', ({ roomId, username }) => {
     socket.join(roomId);
     socket.to(roomId).emit('user-joined', { id: socket.id, username });
-    console.log(`${username} joined room: ${roomId}`);
+    console.log(`👤 ${username} joined room: ${roomId}`);
   });
 
   socket.on('signal', ({ to, data }) => {
@@ -48,12 +51,13 @@ io.on('connection', (socket) => {
 
   socket.on('leave-room', ({ roomId }) => {
     socket.leave(roomId);
-    socket.to(roomId).emit('user-left', socket.id);
+    socket.to(roomId).emit('user-left', { id: socket.id });
+    console.log(`🚪 User ${socket.id} left room: ${roomId}`);
   });
 
   socket.on('disconnect', () => {
-    io.emit('user-left', socket.id);
-    console.log(`User disconnected: ${socket.id}`);
+    io.emit('user-left', { id: socket.id });
+    console.log(`❌ User disconnected: ${socket.id}`);
   });
 });
 
